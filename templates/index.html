@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}BattleCell Security - Главная{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1 class="hero-title">
+                <span class="gradient-text">BattleCell Security</span>
+            </h1>
+            <p class="hero-subtitle">
+                Безопасное хранилище паролей с мастер-паролем и защищенным файловым хранилищем
+            </p>
+                         <div class="hero-features">
+                 <div class="feature">
+                     <i class="fas fa-lock"></i>
+                     <span>Шифрованное хранение</span>
+                 </div>
+                                    <div class="feature">
+                       <i class="fas fa-shield-alt"></i>
+                       <span>Мастер-пароль</span>
+                   </div>
+                 <div class="feature">
+                     <i class="fas fa-cloud"></i>
+                     <span>Файловое хранилище</span>
+                 </div>
+                 <div class="feature">
+                     <i class="fas fa-dice"></i>
+                     <span>Генератор паролей</span>
+                 </div>
+             </div>
+        </div>
+        
+                 <div class="auth-container">
+             <div class="auth-buttons">
+                 <a href="{{ url_for('login') }}" class="btn btn-primary">
+                     <i class="fas fa-sign-in-alt"></i>
+                     Войти
+                 </a>
+                 <a href="{{ url_for('register') }}" class="btn btn-outline">
+                     <i class="fas fa-user-plus"></i>
+                     Регистрация
+                 </a>
+             </div>
+         </div>
+         
+         <div class="generator-link">
+             <a href="{{ url_for('generator') }}" class="btn btn-outline">
+                 <i class="fas fa-dice"></i>
+                 Генератор паролей
+             </a>
+         </div>
+     </div>
+ </div>
+{% endblock %}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{% block title %}BattleCell Security{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="{{ url_for('index') }}" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>BattleCell</span>
+                </a>
+            </div>
+            
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Открыть меню">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            {% if current_user.is_authenticated %}
+             <div class="nav-menu" id="navMenu">
+                 <a href="{{ url_for('dashboard') }}" class="nav-link">
+                     <i class="fas fa-home"></i>
+                     <span>Главная</span>
+                 </a>
+                 <a href="{{ url_for('passwords') }}" class="nav-link">
+                     <i class="fas fa-key"></i>
+                     <span>Пароли</span>
+                 </a>
+                 <a href="{{ url_for('files') }}" class="nav-link">
+                     <i class="fas fa-folder"></i>
+                     <span>Файлы</span>
+                 </a>
+                 <a href="{{ url_for('generator') }}" class="nav-link">
+                     <i class="fas fa-dice"></i>
+                     <span>Генератор</span>
+                 </a>
+                 
+                 <a href="{{ url_for('settings') }}" class="nav-link">
+                     <i class="fas fa-cog"></i>
+                     <span>Настройки</span>
+                 </a>
+                 <a href="{{ url_for('logout') }}" class="nav-link logout">
+                     <i class="fas fa-sign-out-alt"></i>
+                     <span>Выход</span>
+                 </a>
+             </div>
+             {% else %}
+             <div class="nav-menu" id="navMenu">
+                 <a href="{{ url_for('generator') }}" class="nav-link">
+                     <i class="fas fa-dice"></i>
+                     <span>Генератор</span>
+                 </a>
+             </div>
+             {% endif %}
+        </div>
+    </nav>
+
+    <!-- Мобильное меню -->
+    <div class="mobile-menu" id="mobileMenu">
+        {% if current_user.is_authenticated %}
+         <div class="nav-menu">
+             <a href="{{ url_for('dashboard') }}" class="nav-link">
+                 <i class="fas fa-home"></i>
+                 <span>Главная</span>
+             </a>
+             <a href="{{ url_for('passwords') }}" class="nav-link">
+                 <i class="fas fa-key"></i>
+                 <span>Пароли</span>
+             </a>
+             <a href="{{ url_for('files') }}" class="nav-link">
+                 <i class="fas fa-folder"></i>
+                 <span>Файлы</span>
+             </a>
+             <a href="{{ url_for('generator') }}" class="nav-link">
+                 <i class="fas fa-dice"></i>
+                 <span>Генератор</span>
+             </a>
+             
+             <a href="{{ url_for('settings') }}" class="nav-link">
+                 <i class="fas fa-cog"></i>
+                 <span>Настройки</span>
+             </a>
+             <a href="{{ url_for('logout') }}" class="nav-link logout">
+                 <i class="fas fa-sign-out-alt"></i>
+                 <span>Выход</span>
+             </a>
+         </div>
+         {% else %}
+         <div class="nav-menu">
+             <a href="{{ url_for('generator') }}" class="nav-link">
+                 <i class="fas fa-dice"></i>
+                 <span>Генератор</span>
+             </a>
+         </div>
+         {% endif %}
+    </div>
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>{{ message }}</span>
+                            <button class="flash-close" onclick="this.parentElement.remove()" aria-label="Закрыть">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

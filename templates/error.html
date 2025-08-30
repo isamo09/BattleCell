@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Ошибка{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-dark text-white border-danger">
+                <div class="card-header bg-danger">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Ошибка
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ error }}</p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Вернуться на главную
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Назад
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

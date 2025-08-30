@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleCell - Автономный режим</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="offline-container">
+        <div class="offline-content">
+            <div class="offline-icon">
+                <i class="fas fa-wifi-slash"></i>
+            </div>
+            
+            <h1>Нет подключения к интернету</h1>
+            <p>BattleCell работает в автономном режиме. Некоторые функции могут быть недоступны.</p>
+            
+            <div class="offline-features">
+                <h3>Доступные функции:</h3>
+                <ul>
+                    <li><i class="fas fa-key"></i> Просмотр сохраненных паролей</li>
+                    <li><i class="fas fa-folder"></i> Просмотр загруженных файлов</li>
+                    <li><i class="fas fa-dice"></i> Генератор паролей</li>
+                    <li><i class="fas fa-cog"></i> Настройки приложения</li>
+                </ul>
+            </div>
+            
+            <div class="offline-actions">
+                <button class="btn btn-primary" onclick="window.location.reload()">
+                    <i class="fas fa-sync-alt"></i>
+                    Попробовать снова
+                </button>
+                <button class="btn btn-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .offline-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .offline-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(20px);
+        }
+        
+        .offline-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+        }
+        
+        .offline-icon i {
+            font-size: 2rem;
+            color: var(--warning-color);
+        }
+        
+        .offline-content h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .offline-content p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .offline-features {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        
+        .offline-features h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .offline-features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .offline-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+        
+        .offline-features i {
+            color: var(--primary-color);
+            width: 20px;
+        }
+        
+        .offline-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .offline-container {
+                padding: 1rem;
+            }
+            
+            .offline-content {
+                padding: 2rem 1rem;
+            }
+            
+            .offline-content h1 {
+                font-size: 1.5rem;
+            }
+            
+            .offline-actions {
+                flex-direction: column;
+            }
+            
+            .offline-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</body>
+</html>

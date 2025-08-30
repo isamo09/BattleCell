@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}BattleCell Security - Генератор{% endblock %}
+
+{% block content %}
+<div class="generator-page">
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Генератор паролей и чисел</h1>
+            <p>Создавайте безопасные пароли и случайные числа</p>
+        </div>
+    </div>
+    
+    <div class="generator-container">
+        <div class="generator-section">
+            <h2>Генератор паролей</h2>
+            <div class="generator-form">
+                <div class="form-group">
+                    <label for="password-length">Длина пароля</label>
+                    <input type="number" id="password-length" min="4" max="128" value="16">
+                </div>
+                
+                <div class="form-group">
+                    <label>Включить символы:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox">
+                            <input type="checkbox" id="uppercase" checked>
+                            <span>Заглавные буквы (A-Z)</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" id="lowercase" checked>
+                            <span>Строчные буквы (a-z)</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" id="numbers" checked>
+                            <span>Цифры (0-9)</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" id="symbols">
+                            <span>Специальные символы (!@#$%^&*)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="generatePassword()">
+                    <i class="fas fa-dice"></i>
+                    Сгенерировать пароль
+                </button>
+                
+                <div class="result-container">
+                    <input type="text" id="generated-password" readonly>
+                    <button class="copy-btn" onclick="copyPassword()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="generator-section">
+            <h2>Генератор чисел</h2>
+            <div class="generator-form">
+                <div class="form-group">
+                    <label for="min-number">Минимальное число</label>
+                    <input type="number" id="min-number" value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="max-number">Максимальное число</label>
+                    <input type="number" id="max-number" value="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="number-count">Количество чисел</label>
+                    <input type="number" id="number-count" min="1" max="100" value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox">
+                        <input type="checkbox" id="unique-numbers">
+                        <span>Уникальные числа</span>
+                    </label>
+                </div>
+                
+                <button class="btn btn-primary" onclick="generateNumbers()">
+                    <i class="fas fa-random"></i>
+                    Сгенерировать числа
+                </button>
+                
+                <div class="result-container">
+                    <textarea id="generated-numbers" readonly rows="3"></textarea>
+                    <button class="copy-btn" onclick="copyNumbers()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generatePassword() {
+    const length = parseInt(document.getElementById('password-length').value);
+    const uppercase = document.getElementById('uppercase').checked;
+    const lowercase = document.getElementById('lowercase').checked;
+    const numbers = document.getElementById('numbers').checked;
+    const symbols = document.getElementById('symbols').checked;
+    
+    let charset = '';
+    if (uppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if (lowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
+    if (numbers) charset += '0123456789';
+    if (symbols) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    
+    if (charset === '') {
+        alert('Выберите хотя бы один тип символов');
+        return;
+    }
+    
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    
+    document.getElementById('generated-password').value = password;
+}
+
+function generateNumbers() {
+    const min = parseInt(document.getElementById('min-number').value);
+    const max = parseInt(document.getElementById('max-number').value);
+    const count = parseInt(document.getElementById('number-count').value);
+    const unique = document.getElementById('unique-numbers').checked;
+    
+    if (min >= max) {
+        alert('Минимальное число должно быть меньше максимального');
+        return;
+    }
+    
+    if (unique && count > (max - min + 1)) {
+        alert('Невозможно сгенерировать столько уникальных чисел в заданном диапазоне');
+        return;
+    }
+    
+    let numbers = [];
+    
+    if (unique) {
+        const range = [];
+        for (let i = min; i <= max; i++) {
+            range.push(i);
+        }
+        
+        for (let i = 0; i < count; i++) {
+            const index = Math.floor(Math.random() * range.length);
+            numbers.push(range.splice(index, 1)[0]);
+        }
+    } else {
+        for (let i = 0; i < count; i++) {
+            numbers.push(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+    }
+    
+    document.getElementById('generated-numbers').value = numbers.join(', ');
+}
+
+function copyPassword() {
+    const password = document.getElementById('generated-password').value;
+    if (password) {
+        navigator.clipboard.writeText(password).then(() => {
+            showNotification('Пароль скопирован');
+        });
+    }
+}
+
+function copyNumbers() {
+    const numbers = document.getElementById('generated-numbers').value;
+    if (numbers) {
+        navigator.clipboard.writeText(numbers).then(() => {
+            showNotification('Числа скопированы');
+        });
+    }
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = `
+        <i class="fas fa-check"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}BattleCell Security - Панель управления{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Добро пожаловать, {{ current_user.username }}!</h1>
+        <p>Ваша безопасная цифровая крепость</p>
+    </div>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="card-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="card-content">
+                <h3>Хранилище паролей</h3>
+                <p>Безопасно храните и управляйте всеми вашими паролями с помощью мощного шифрования</p>
+                <div class="security-info">
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>Шифрование AES-256</span>
+                    </div>
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>Автогенерация паролей</span>
+                    </div>
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>Безопасное хранение</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('passwords') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i>
+                    Управлять паролями
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="card-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="card-content">
+                <h3>Файловое хранилище</h3>
+                <p>Загружайте и храните файлы с полным шифрованием и защитой</p>
+                <div class="security-info">
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>500MB общее хранилище</span>
+                    </div>
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>Полное шифрование</span>
+                    </div>
+                    <div class="security-item">
+                        <i class="fas fa-check"></i>
+                        <span>Безопасная передача</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('files') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i>
+                    Управлять файлами
+                </a>
+            </div>
+        </div>
+        
+                 <div class="dashboard-card">
+             <div class="card-icon">
+                 <i class="fas fa-shield-alt"></i>
+             </div>
+             <div class="card-content">
+                 <h3>Мастер-пароль</h3>
+                 <p>Единый мастер-пароль для шифрования всех ваших данных</p>
+                 <div class="security-info">
+                     <div class="security-item">
+                         <i class="fas fa-check"></i>
+                         <span>AES-256 шифрование</span>
+                     </div>
+                     <div class="security-item">
+                         <i class="fas fa-check"></i>
+                         <span>Безопасное хранение</span>
+                     </div>
+                     <div class="security-item">
+                         <i class="fas fa-check"></i>
+                         <span>Единый ключ</span>
+                     </div>
+                 </div>
+
+             </div>
+         </div>
+    </div>
+    
+    <div class="quick-actions">
+        <h2>Быстрые действия</h2>
+        <div class="actions-grid">
+            <button class="action-btn" onclick="showAddPasswordModal()">
+                <i class="fas fa-plus"></i>
+                <span>Добавить пароль</span>
+            </button>
+            <button class="action-btn" onclick="showUploadFileModal()">
+                <i class="fas fa-upload"></i>
+                <span>Загрузить файл</span>
+            </button>
+            <a href="{{ url_for('generator') }}" class="action-btn">
+                <i class="fas fa-random"></i>
+                <span>Генератор паролей</span>
+            </a>
+            <a href="{{ url_for('settings') }}" class="action-btn">
+                <i class="fas fa-cog"></i>
+                <span>Настройки</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="masterPasswordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Настройка мастер-пароля</h3>
+        </div>
+        <div class="modal-body">
+            <p>Для безопасной работы с приложением необходимо установить мастер-пароль. Он будет использоваться для шифрования всех ваших данных.</p>
+            
+            <form id="masterPasswordForm">
+                <div class="form-group">
+                    <label for="master-password">Мастер-пароль</label>
+                    <input type="password" id="master-password" name="master_password" required minlength="8">
+                    <div class="password-strength" id="master-password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="master-strength-fill"></div>
+                        </div>
+                        <span class="strength-text" id="master-strength-text">Введите пароль</span>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="confirm-password-group">
+                    <label for="confirm-master-password">Подтвердите мастер-пароль</label>
+                    <input type="password" id="confirm-master-password" name="confirm_master_password" minlength="8">
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-shield-alt"></i>
+                        Установить мастер-пароль
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="addPasswordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Добавить новый пароль</h3>
+            <button class="modal-close" onclick="closeModal('addPasswordModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="addPasswordForm" onsubmit="addPassword(event)">
+            <div class="form-group">
+                <label for="title">Название</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="url">URL (необязательно)</label>
+                <input type="url" id="url" name="url">
+            </div>
+            <div class="form-group">
+                <label for="notes">Заметки (необязательно)</label>
+                <textarea id="notes" name="notes" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="master_password">Мастер-пароль</label>
+                <input type="password" id="master_password" name="master_password" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addPasswordModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="uploadFileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Загрузить файл</h3>
+            <button class="modal-close" onclick="closeModal('uploadFileModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="uploadFileForm" onsubmit="uploadFile(event)">
+            <div class="form-group">
+                <label for="file">Выберите файл</label>
+                <input type="file" id="file" name="file" required>
+                <div class="file-info-display" id="fileInfo" style="display: none;">
+                    <p>Размер: <span id="fileSize">0</span></p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="master_password">Мастер-пароль</label>
+                <input type="password" id="master_password" name="master_password" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('uploadFileModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Загрузить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkPasswordStrength(password, strengthId, fillId, textId) {
+    let strength = 0;
+    let feedback = '';
+    
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[a-z]/)) strength += 1;
+    if (password.match(/[A-Z]/)) strength += 1;
+    if (password.match(/[0-9]/)) strength += 1;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+    
+    const strengthFill = document.getElementById(fillId);
+    const strengthText = document.getElementById(textId);
+    
+    switch (strength) {
+        case 0:
+        case 1:
+            strengthFill.style.width = '20%';
+            strengthFill.style.backgroundColor = '#ef4444';
+            feedback = 'Очень слабый';
+            break;
+        case 2:
+            strengthFill.style.width = '40%';
+            strengthFill.style.backgroundColor = '#f59e0b';
+            feedback = 'Слабый';
+            break;
+        case 3:
+            strengthFill.style.width = '60%';
+            strengthFill.style.backgroundColor = '#eab308';
+            feedback = 'Средний';
+            break;
+        case 4:
+            strengthFill.style.width = '80%';
+            strengthFill.style.backgroundColor = '#22c55e';
+            feedback = 'Хороший';
+            break;
+        case 5:
+            strengthFill.style.width = '100%';
+            strengthFill.style.backgroundColor = '#16a34a';
+            feedback = 'Отличный';
+            break;
+    }
+    
+    strengthText.textContent = feedback;
+}
+
+document.getElementById('master-password').addEventListener('input', function() {
+    checkPasswordStrength(this.value, 'master-password-strength', 'master-strength-fill', 'master-strength-text');
+});
+
+document.getElementById('masterPasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('master-password').value;
+    const confirmPassword = document.getElementById('confirm-master-password').value;
+    const isSetupMode = document.getElementById('confirm-password-group').style.display !== 'none';
+    
+    if (isSetupMode) {
+        if (password !== confirmPassword) {
+            alert('Пароли не совпадают');
+            return;
+        }
+        
+        if (password.length < 8) {
+            alert('Мастер-пароль должен содержать минимум 8 символов');
+            return;
+        }
+        
+        fetch('/set_master_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `master_password=${encodeURIComponent(password)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('masterPasswordModal').style.display = 'none';
+                showNotification('Мастер-пароль установлен');
+            } else {
+                alert(data.error || 'Ошибка при установке мастер-пароля');
+            }
+        })
+        .catch(error => {
+            alert('Ошибка при установке мастер-пароля');
+        });
+    } else {
+        if (password.length < 8) {
+            alert('Мастер-пароль должен содержать минимум 8 символов');
+            return;
+        }
+        
+        fetch('/verify_master_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `master_password=${encodeURIComponent(password)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('masterPasswordModal').style.display = 'none';
+                showNotification(data.message);
+            } else {
+                alert(data.error || 'Ошибка при проверке мастер-пароля');
+            }
+        })
+        .catch(error => {
+            alert('Ошибка при проверке мастер-пароля');
+        });
+    }
+});
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = `
+        <i class="fas fa-check"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function addPassword(event) {
+    event.preventDefault();
+    const form = document.getElementById('addPasswordForm');
+    const formData = new FormData(form);
+    const userPassword = formData.get('master_password'); // Changed from user_password to master_password
+
+    fetch('/add_password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `title=${encodeURIComponent(formData.get('title'))}&username=${encodeURIComponent(formData.get('username'))}&password=${encodeURIComponent(formData.get('password'))}&url=${encodeURIComponent(formData.get('url'))}&notes=${encodeURIComponent(formData.get('notes'))}&master_password=${encodeURIComponent(userPassword)}` // Changed from user_password to master_password
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Пароль успешно добавлен!');
+            closeModal('addPasswordModal');
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка при добавлении пароля');
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при добавлении пароля');
+    });
+}
+
+function uploadFile(event) {
+    event.preventDefault();
+    const form = document.getElementById('uploadFileForm');
+    const formData = new FormData(form);
+    const file = formData.get('file');
+    const masterPassword = formData.get('master_password');
+
+    if (!file || !masterPassword) {
+        alert('Выберите файл и введите мастер-пароль');
+        return;
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('master_password', masterPassword);
+
+    fetch('/upload_file', {
+        method: 'POST',
+        body: uploadData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Файл успешно загружен!');
+            closeModal('uploadFileModal');
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка при загрузке файла');
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при загрузке файла');
+    });
+}
+
+
+
+function showAddPasswordModal() {
+    document.getElementById('addPasswordModal').style.display = 'flex';
+}
+
+function showUploadFileModal() {
+    document.getElementById('uploadFileModal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileInfo = document.getElementById('fileInfo');
+                const fileSize = document.getElementById('fileSize');
+                
+                fileSize.textContent = formatFileSize(file.size);
+                fileInfo.style.display = 'block';
+                
+                if (file.size > 500 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер: 500MB');
+                    e.target.value = '';
+                    fileInfo.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    window.onclick = function(event) {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+});
+
+// Проверяем, нужно ли показать модальное окно мастер-пароля
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/check_master_password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.has_master_password) {
+            document.getElementById('masterPasswordModal').style.display = 'flex';
+        } else {
+            // Если мастер-пароль установлен, проверяем сессию
+            fetch('/check_session_master_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+            .then(response => response.json())
+            .then(sessionData => {
+                if (!sessionData.has_master_password) {
+                    // Показываем модальное окно для ввода мастер-пароля
+                    document.getElementById('masterPasswordModal').style.display = 'flex';
+                    document.getElementById('masterPasswordModal').querySelector('h3').textContent = 'Введите мастер-пароль';
+                    document.getElementById('masterPasswordModal').querySelector('p').textContent = 'Для продолжения работы необходимо ввести мастер-пароль';
+                    document.getElementById('confirm-password-group').style.display = 'none';
+                    document.getElementById('confirm-master-password').removeAttribute('required');
+                    document.getElementById('submit-btn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Войти';
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

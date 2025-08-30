@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}BattleCell Security - Файлы{% endblock %}
+
+{% block content %}
+<div class="files-page">
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Файловое хранилище</h1>
+            <p>Безопасно храните файлы с полным шифрованием</p>
+            <div class="storage-info">
+                <div class="storage-bar">
+                    <div class="storage-fill" style="width: {{ storage_info.percentage }}%"></div>
+                </div>
+                <div class="storage-text">
+                    Использовано: {{ storage_info.used_formatted }} из {{ storage_info.max_formatted }} 
+                    ({{ storage_info.available_formatted }} свободно)
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showUploadFileModal()">
+                <i class="fas fa-upload"></i>
+                Загрузить файл
+            </button>
+        </div>
+    </div>
+    
+    <div class="files-container">
+        {% if files %}
+        <div class="files-grid">
+            {% for file in files %}
+            <div class="file-card">
+                <div class="file-header">
+                    <div class="file-icon">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div class="file-info">
+                        <h3>{{ file.filename }}</h3>
+                        <p class="file-size">{{ (file.size / 1024 / 1024) | round(2) }} MB</p>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn" onclick="downloadFile({{ file.id }})" title="Скачать файл">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="action-btn" onclick="deleteFile({{ file.id }})" title="Удалить файл">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="file-details">
+                    <div class="detail-item">
+                        <span class="label">Загружен:</span>
+                        <span class="value">{{ file.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <h3>Нет загруженных файлов</h3>
+            <p>Загрузите свой первый файл для начала работы</p>
+            <button class="btn btn-primary" onclick="showUploadFileModal()">
+                <i class="fas fa-upload"></i>
+                Загрузить файл
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="uploadFileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Загрузить файл</h3>
+            <button class="modal-close" onclick="closeModal('uploadFileModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="uploadFileForm" onsubmit="uploadFile(event)">
+            <div class="form-group">
+                <label for="file">Выберите файл</label>
+                <input type="file" id="file" name="file" required>
+                <div class="file-info-display" id="fileInfo" style="display: none;">
+                    <p>Размер: <span id="fileSize">0</span></p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="master_password">Мастер-пароль</label>
+                <input type="password" id="master_password" name="master_password" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('uploadFileModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Загрузить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<div id="downloadFileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Введите мастер-пароль</h3>
+            <button class="modal-close" onclick="closeModal('downloadFileModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Для скачивания файла необходимо ввести мастер-пароль</p>
+            <div class="form-group">
+                <label for="downloadMasterPassword">Мастер-пароль</label>
+                <input type="password" id="downloadMasterPassword" name="master_password" required>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('downloadFileModal')">Отмена</button>
+            <button type="button" class="btn btn-primary" onclick="downloadFileDirect()">Скачать</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteFileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Удалить файл</h3>
+            <button class="modal-close" onclick="closeModal('deleteFileModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Вы уверены, что хотите удалить этот файл? Это действие нельзя отменить.</p>
+            <div class="form-group">
+                <label for="deleteFileAccountPassword">Пароль от аккаунта</label>
+                <input type="password" id="deleteFileAccountPassword" name="account_password" required>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteFileModal')">Отмена</button>
+            <button type="button" class="btn btn-danger" onclick="confirmDeleteFile()">Удалить</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFileId = null;
+let currentDeleteFileId = null;
+
+function showUploadFileModal() {
+    document.getElementById('uploadFileModal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function downloadFile(fileId) {
+    currentFileId = fileId;
+    document.getElementById('downloadFileModal').style.display = 'flex';
+}
+
+function deleteFile(fileId) {
+    currentDeleteFileId = fileId;
+    document.getElementById('deleteFileModal').style.display = 'flex';
+}
+
+function confirmDeleteFile() {
+    if (!currentDeleteFileId) return;
+    
+    const accountPassword = document.getElementById('deleteFileAccountPassword').value;
+    if (!accountPassword) {
+        alert('Введите пароль от аккаунта');
+        return;
+    }
+    
+    fetch(`/delete_file/${currentDeleteFileId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `account_password=${encodeURIComponent(accountPassword)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Файл успешно удален!');
+            closeModal('deleteFileModal');
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка при удалении файла');
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при удалении файла');
+    });
+}
+
+function downloadFileDirect() {
+    if (!currentFileId) return;
+    
+    const userPassword = document.getElementById('downloadMasterPassword').value;
+    if (!userPassword) {
+        alert('Введите мастер-пароль');
+        return;
+    }
+    
+    fetch(`/download_file/${currentFileId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `master_password=${encodeURIComponent(userPassword)}`
+    })
+    .then(response => {
+        if (response.ok) {
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = '';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            return response.blob().then(blob => ({ blob, filename }));
+        } else {
+            throw new Error('Ошибка при скачивании файла');
+        }
+    })
+    .then(({ blob, filename }) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'downloaded_file';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        closeModal('downloadFileModal');
+        document.getElementById('downloadMasterPassword').value = '';
+    })
+    .catch(error => {
+        alert('Ошибка при скачивании файла');
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const fileInfo = document.getElementById('fileInfo');
+        const fileSize = document.getElementById('fileSize');
+        
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.style.display = 'block';
+        
+        // Проверяем, что файл не превышает общий лимит хранилища
+        // (эта проверка также будет на сервере)
+        if (file.size > 500 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимальный размер: 500MB');
+            e.target.value = '';
+            fileInfo.style.display = 'none';
+        }
+    }
+});
+
+function uploadFile(event) {
+    event.preventDefault();
+    const form = document.getElementById('uploadFileForm');
+    const formData = new FormData(form);
+    const file = formData.get('file');
+    const masterPassword = formData.get('master_password');
+
+    if (!file || !masterPassword) {
+        alert('Выберите файл и введите мастер-пароль');
+        return;
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('master_password', masterPassword);
+
+    fetch('/upload_file', {
+        method: 'POST',
+        body: uploadData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Файл успешно загружен!');
+            closeModal('uploadFileModal');
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка при загрузке файла');
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при загрузке файла');
+    });
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = `
+        <i class="fas fa-check"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

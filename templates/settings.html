@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}BattleCell Security - Настройки{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Настройки аккаунта</h1>
+            <p>Управляйте настройками безопасности и конфиденциальности</p>
+        </div>
+    </div>
+    
+    <div class="settings-container">
+        <div class="settings-tabs">
+            <button class="tab-btn active" onclick="showTab('account')">
+                <i class="fas fa-user"></i>
+                Аккаунт
+            </button>
+            <button class="tab-btn" onclick="showTab('security')">
+                <i class="fas fa-shield-alt"></i>
+                Безопасность
+            </button>
+            <button class="tab-btn" onclick="showTab('danger')">
+                <i class="fas fa-exclamation-triangle"></i>
+                Опасная зона
+            </button>
+        </div>
+        
+        <div class="tab-content active" id="account-tab">
+            <div class="settings-section">
+                <h2>Смена имени пользователя</h2>
+                <div class="settings-form">
+                    <form method="POST" action="{{ url_for('change_username') }}">
+                        <div class="form-group">
+                            <label for="new-username">Новое имя пользователя</label>
+                            <input type="text" id="new-username" name="new_username" required minlength="3">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="username-password">Текущий пароль</label>
+                            <input type="password" id="username-password" name="current_password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-edit"></i>
+                            Сменить имя пользователя
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>Смена пароля</h2>
+                <div class="settings-form">
+                    <form method="POST" action="{{ url_for('change_password') }}">
+                        <div class="form-group">
+                            <label for="current-password">Текущий пароль</label>
+                            <input type="password" id="current-password" name="current_password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new-password">Новый пароль</label>
+                            <input type="password" id="new-password" name="new_password" required>
+                            <div class="password-strength" id="password-strength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strength-fill"></div>
+                                </div>
+                                <span class="strength-text" id="strength-text">Введите пароль</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-new-password">Подтвердите новый пароль</label>
+                            <input type="password" id="confirm-new-password" name="confirm_new_password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key"></i>
+                            Сменить пароль
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="security-tab">
+            <div class="settings-section">
+                <h2>Смена мастер-пароля</h2>
+                <div class="settings-form">
+                    <div class="master-password-info">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <h3>Мастер-пароль</h3>
+                            <p>{% if current_user.master_password_hash %}Установлен{% else %}Не установлен{% endif %}</p>
+                        </div>
+                    </div>
+                    
+                    <form id="changeMasterPasswordForm" onsubmit="changeMasterPassword(event)">
+                        <div class="form-group">
+                            <label for="current-master-password">Текущий мастер-пароль</label>
+                            <input type="password" id="current-master-password" name="current_master_password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new-master-password">Новый мастер-пароль</label>
+                            <input type="password" id="new-master-password" name="new_master_password" required minlength="8">
+                            <div class="password-strength" id="master-password-strength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="master-strength-fill"></div>
+                                </div>
+                                <span class="strength-text" id="master-strength-text">Введите пароль</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-new-master-password">Подтвердите новый мастер-пароль</label>
+                            <input type="password" id="confirm-new-master-password" name="confirm_new_master_password" required minlength="8">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-shield-alt"></i>
+                            Сменить мастер-пароль
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+
+            
+
+        </div>
+        
+        <div class="tab-content" id="danger-tab">
+            <div class="settings-section">
+                <h2>Удаление аккаунта</h2>
+                <div class="settings-form">
+                    <div class="danger-zone">
+                        <div class="danger-info">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <h3>Опасная зона</h3>
+                                <p>Удаление аккаунта необратимо. Все данные будут потеряны.</p>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-danger" onclick="showDeleteAccountModal()">
+                            <i class="fas fa-trash"></i>
+                            Удалить аккаунт
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deleteAccountModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение удаления</h3>
+            <button class="modal-close" onclick="closeModal('deleteAccountModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('delete_account') }}">
+            <div class="form-group">
+                <label for="delete-confirm">Введите "УДАЛИТЬ" для подтверждения</label>
+                <input type="text" id="delete-confirm" name="delete_confirm" required>
+            </div>
+            <div class="form-group">
+                <label for="delete-password">Введите пароль</label>
+                <input type="password" id="delete-password" name="delete_password" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteAccountModal')">Отмена</button>
+                <button type="submit" class="btn btn-danger">Удалить аккаунт</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tabName) {
+    // Скрываем все вкладки
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Убираем активный класс со всех кнопок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Показываем нужную вкладку
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Добавляем активный класс к кнопке
+    event.target.classList.add('active');
+}
+
+function checkPasswordStrength(password, strengthId, fillId, textId) {
+    let strength = 0;
+    let feedback = '';
+    
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[a-z]/)) strength += 1;
+    if (password.match(/[A-Z]/)) strength += 1;
+    if (password.match(/[0-9]/)) strength += 1;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+    
+    const strengthFill = document.getElementById(fillId);
+    const strengthText = document.getElementById(textId);
+    
+    switch (strength) {
+        case 0:
+        case 1:
+            strengthFill.style.width = '20%';
+            strengthFill.style.backgroundColor = '#ef4444';
+            feedback = 'Очень слабый';
+            break;
+        case 2:
+            strengthFill.style.width = '40%';
+            strengthFill.style.backgroundColor = '#f59e0b';
+            feedback = 'Слабый';
+            break;
+        case 3:
+            strengthFill.style.width = '60%';
+            strengthFill.style.backgroundColor = '#eab308';
+            feedback = 'Средний';
+            break;
+        case 4:
+            strengthFill.style.width = '80%';
+            strengthFill.style.backgroundColor = '#22c55e';
+            feedback = 'Хороший';
+            break;
+        case 5:
+            strengthFill.style.width = '100%';
+            strengthFill.style.backgroundColor = '#16a34a';
+            feedback = 'Отличный';
+            break;
+    }
+    
+    strengthText.textContent = feedback;
+}
+
+document.getElementById('new-password').addEventListener('input', function() {
+    checkPasswordStrength(this.value, 'password-strength', 'strength-fill', 'strength-text');
+});
+
+document.getElementById('new-master-password').addEventListener('input', function() {
+    checkPasswordStrength(this.value, 'master-password-strength', 'master-strength-fill', 'master-strength-text');
+});
+
+function changeMasterPassword(event) {
+    event.preventDefault();
+    const form = document.getElementById('changeMasterPasswordForm');
+    const formData = new FormData(form);
+    
+    const currentMasterPassword = formData.get('current_master_password');
+    const newMasterPassword = formData.get('new_master_password');
+    const confirmNewMasterPassword = formData.get('confirm_new_master_password');
+    
+    if (newMasterPassword !== confirmNewMasterPassword) {
+        alert('Новые мастер-пароли не совпадают');
+        return;
+    }
+    
+    if (newMasterPassword.length < 8) {
+        alert('Новый мастер-пароль должен содержать минимум 8 символов');
+        return;
+    }
+    
+    fetch('/change_master_password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `current_master_password=${encodeURIComponent(currentMasterPassword)}&new_master_password=${encodeURIComponent(newMasterPassword)}&confirm_new_master_password=${encodeURIComponent(confirmNewMasterPassword)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Мастер-пароль успешно изменен!');
+            form.reset();
+        } else {
+            alert(data.error || 'Ошибка при смене мастер-пароля');
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при смене мастер-пароля');
+    });
+}
+
+function showDeleteAccountModal() {
+    document.getElementById('deleteAccountModal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+document.querySelector('form[action="{{ url_for("change_password") }}"]').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-new-password').value;
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('Новые пароли не совпадают');
+    }
+});
+
+document.querySelector('form[action="{{ url_for("delete_account") }}"]').addEventListener('submit', function(e) {
+    const confirm = document.getElementById('delete-confirm').value;
+    
+    if (confirm !== 'УДАЛИТЬ') {
+        e.preventDefault();
+        alert('Введите "УДАЛИТЬ" для подтверждения');
+    }
+});
+
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}
