@@ -23,6 +23,8 @@ BattleCell Security is a secure password and file storage application built with
 - **Secure File Storage**: Encrypted file upload/download
 - **Password Generator**: Built-in secure password generation
 - **Error Resilience**: Graceful handling of decryption errors
+- **Progressive Web App**: PWA capabilities with offline support
+- **Modern UI**: Dark transparent design with responsive layout
 
 ## Architecture
 
@@ -33,6 +35,7 @@ BattleCell Security is a secure password and file storage application built with
 - **Encryption**: Cryptography library (Fernet + PBKDF2)
 - **Authentication**: Flask-Login
 - **File Handling**: Werkzeug secure filename
+- **PWA**: Service Worker, Web App Manifest
 
 ### System Architecture
 ```
@@ -46,6 +49,41 @@ BattleCell Security is a secure password and file storage application built with
     │Encryption│            │Session  │            │Encrypted│
     │(Client) │            │Mgmt     │            │Storage  │
     └─────────┘            └─────────┘            └─────────┘
+```
+
+### Project Structure
+```
+BattleCell/
+├── app.py                 # Main Flask application
+├── requirements.txt       # Python dependencies
+├── README.md             # Project documentation
+├── TECHNICAL_DOCUMENTATION_EN.md # Technical documentation (EN)
+├── ТЕХНИЧЕСКАЯ_ДОКУМЕНТАЦИЯ_RU.md # Technical documentation (RU)
+├── database.db           # SQLite database (auto-created)
+├── uploads/              # Upload folder (auto-created)
+├── templates/            # HTML templates
+│   ├── base.html         # Base template
+│   ├── index.html        # Landing page
+│   ├── dashboard.html    # User dashboard
+│   ├── passwords.html    # Password management
+│   ├── files.html        # File storage
+│   ├── generator.html    # Password generator
+│   ├── settings.html     # User settings
+│   ├── login.html        # Login page
+│   ├── register.html     # Registration page
+│   ├── error.html        # Error page
+│   └── offline.html      # Offline page
+└── static/               # Static files
+    ├── css/
+    │   ├── style.css     # Main styles
+    │   ├── fonts.css     # Font styles
+    │   └── fontawesome.min.css # FontAwesome
+    ├── js/
+    │   ├── main.js       # Main JavaScript
+    │   └── sw.js         # Service Worker
+    ├── fonts/            # Font files
+    ├── icons/            # App icons
+    └── manifest.json     # PWA manifest
 ```
 
 ## Security Model
@@ -313,6 +351,12 @@ CREATE TABLE user_settings (
 - `downloadFile(id)` - Initiate file download
 - `deleteFile(id)` - Initiate file deletion
 
+### PWA Features
+- **Service Worker**: Offline functionality and caching
+- **Web App Manifest**: App-like installation
+- **Offline Page**: Graceful offline handling
+- **App Icons**: Multiple sizes for different devices
+
 ## Security Features
 
 ### Password Security
@@ -386,23 +430,17 @@ def handle_exception(e):
 ### Installation
 ```bash
 # Clone repository
-git clone <repository-url>
-cd supercell
+git clone https://github.com/isamo09/BattleCell
+cd BattleCell
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Initialize database
-python init_db.py
+python app.py
 
 # Run application
 python app.py
-```
-
-### Migration of Existing Data
-```bash
-# Migrate to new encryption system
-python migrate_db.py
 ```
 
 ### Configuration
@@ -538,6 +576,7 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 - API for third-party integration
 - Advanced file versioning
 - Automated backups
+- Enhanced PWA features
 
 ### Security Improvements
 - Hardware security modules (HSM) integration
@@ -546,3 +585,5 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 - Zero-knowledge architecture
 - End-to-end encryption verification
 - Enhanced error recovery mechanisms
+- Advanced audit logging
+- Real-time security monitoring
