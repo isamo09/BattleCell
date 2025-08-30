@@ -38,7 +38,7 @@
 
 1. **Клонируйте репозиторий**
    ```bash
-   git clone https://github.com/isamo09/BattleCell
+   git clone https://github.com/isamo09/BattleCell.git
    cd BattleCell
    ```
 
@@ -271,3 +271,4 @@ MIT License - см. файл [LICENSE](LICENSE) для подробностей.
 ![GitHub last commit](https://img.shields.io/github/last-commit/isamo09/BattleCell?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/isamo09/BattleCell?style=flat-square)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/isamo09/BattleCell?style=flat-square)
+
