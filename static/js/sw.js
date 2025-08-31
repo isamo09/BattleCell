@@ -11,7 +11,8 @@ const urlsToCache = [
     '/static/fonts/Inter-Bold.woff2',
     '/static/icons/icon-192x192.png',
     '/static/icons/icon-512x512.png',
-    '/manifest.json'
+    '/manifest.json',
+    '/sw.js'
 ];
 
 // Установка Service Worker

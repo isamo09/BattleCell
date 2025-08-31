@@ -422,6 +422,24 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/manifest.json')
+def manifest():
+    try:
+        response = send_file(os.path.join(app.root_path, 'static', 'manifest.json'), mimetype='application/json')
+        response.headers['Cache-Control'] = 'public, max-age=3600'  # Кэшировать на 1 час
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Manifest not found'}), 404
+
+@app.route('/sw.js')
+def service_worker():
+    try:
+        response = send_file(os.path.join(app.root_path, 'static', 'js', 'sw.js'), mimetype='application/javascript')
+        response.headers['Cache-Control'] = 'no-cache'  # Не кэшировать Service Worker
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Service worker not found'}), 404
+
 @app.route('/offline.html')
 def offline():
     return render_template('offline.html')
