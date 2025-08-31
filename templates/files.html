@@ -4,6 +4,18 @@
 
 {% block content %}
 <div class="files-page">
+    {% if not has_master_password %}
+    <div class="warning-banner">
+        <div class="warning-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="warning-text">
+                <strong>Мастер-пароль не установлен</strong>
+                <p>Для загрузки и скачивания файлов необходимо установить мастер-пароль в настройках аккаунта.</p>
+            </div>
+            <a href="/settings" class="btn btn-warning">Перейти в настройки</a>
+        </div>
+    </div>
+    {% endif %}
     <div class="page-header">
         <div class="header-content">
             <h1>Файловое хранилище</h1>
@@ -19,7 +31,7 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn btn-primary" onclick="showUploadFileModal()">
+            <button class="btn btn-primary" onclick="showUploadFileModal()" {% if not has_master_password %}disabled{% endif %}>
                 <i class="fas fa-upload"></i>
                 Загрузить файл
             </button>
@@ -44,7 +56,7 @@
                         <p class="file-size">{{ (file.size / 1024 / 1024) | round(2) }} MB</p>
                     </div>
                     <div class="file-actions">
-                        <button class="action-btn" onclick="downloadFile({{ file.id }})" title="Скачать файл">
+                        <button class="action-btn" onclick="downloadFile({{ file.id }})" title="Скачать файл" {% if not has_master_password %}disabled{% endif %}>
                             <i class="fas fa-download"></i>
                         </button>
                         <button class="action-btn" onclick="deleteFile({{ file.id }})" title="Удалить файл">
@@ -69,7 +81,7 @@
             </div>
             <h3>Нет загруженных файлов</h3>
             <p>Загрузите свой первый файл для начала работы</p>
-            <button class="btn btn-primary" onclick="showUploadFileModal()">
+            <button class="btn btn-primary" onclick="showUploadFileModal()" {% if not has_master_password %}disabled{% endif %}>
                 <i class="fas fa-upload"></i>
                 Загрузить файл
             </button>
@@ -92,6 +104,7 @@
                 <input type="file" id="file" name="file" required>
                 <div class="file-info-display" id="fileInfo" style="display: none;">
                     <p>Размер: <span id="fileSize">0</span></p>
+                    <p>Тип: <span id="fileType">-</span></p>
                 </div>
             </div>
             <div class="form-group">
@@ -99,9 +112,22 @@
                 <input type="password" id="master_password" name="master_password" required>
             </div>
 
-            <div class="modal-actions">
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressPercent">0%</span>
+                    <span id="progressStatus">Подготовка к загрузке...</span>
+                </div>
+            </div>
+
+            <div class="modal-actions" id="uploadActions">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('uploadFileModal')">Отмена</button>
-                <button type="submit" class="btn btn-primary">Загрузить</button>
+                <button type="submit" class="btn btn-primary" id="uploadBtn">Загрузить</button>
+            </div>
+            <div class="modal-actions" id="cancelActions" style="display: none;">
+                <button type="button" class="btn btn-danger" onclick="cancelUpload()">Отменить загрузку</button>
             </div>
         </form>
     </div>
@@ -161,6 +187,10 @@ let currentFileId = null;
 let currentDeleteFileId = null;
 
 function showUploadFileModal() {
+    {% if not has_master_password %}
+        showNotification('Для загрузки файлов необходимо установить мастер-пароль в настройках', 'error');
+        return;
+    {% endif %}
     document.getElementById('uploadFileModal').style.display = 'flex';
 }
 
@@ -169,6 +199,10 @@ function closeModal(modalId) {
 }
 
 function downloadFile(fileId) {
+    {% if not has_master_password %}
+        showNotification('Для скачивания файлов необходимо установить мастер-пароль в настройках', 'error');
+        return;
+    {% endif %}
     currentFileId = fileId;
     document.getElementById('downloadFileModal').style.display = 'flex';
 }
@@ -183,7 +217,7 @@ function confirmDeleteFile() {
     
     const accountPassword = document.getElementById('deleteFileAccountPassword').value;
     if (!accountPassword) {
-        alert('Введите пароль от аккаунта');
+        showNotification('Введите пароль от аккаунта', 'error');
         return;
     }
     
@@ -201,11 +235,11 @@ function confirmDeleteFile() {
             closeModal('deleteFileModal');
             location.reload();
         } else {
-            alert(data.error || 'Ошибка при удалении файла');
+            showNotification(data.error || 'Ошибка при удалении файла', 'error');
         }
     })
     .catch(error => {
-        alert('Ошибка при удалении файла');
+        showNotification('Ошибка при удалении файла', 'error');
     });
 }
 
@@ -214,7 +248,7 @@ function downloadFileDirect() {
     
     const userPassword = document.getElementById('downloadMasterPassword').value;
     if (!userPassword) {
-        alert('Введите мастер-пароль');
+        showNotification('Введите мастер-пароль', 'error');
         return;
     }
     
@@ -237,7 +271,9 @@ function downloadFileDirect() {
             }
             return response.blob().then(blob => ({ blob, filename }));
         } else {
-            throw new Error('Ошибка при скачивании файла');
+            return response.json().then(data => {
+                throw new Error(data.error || 'Ошибка при скачивании файла');
+            });
         }
     })
     .then(({ blob, filename }) => {
@@ -253,7 +289,7 @@ function downloadFileDirect() {
         document.getElementById('downloadMasterPassword').value = '';
     })
     .catch(error => {
-        alert('Ошибка при скачивании файла');
+        showNotification(error.message || 'Ошибка при скачивании файла', 'error');
     });
 }
 
@@ -270,17 +306,48 @@ document.getElementById('file').addEventListener('change', function(e) {
     if (file) {
         const fileInfo = document.getElementById('fileInfo');
         const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
         
         fileSize.textContent = formatFileSize(file.size);
+        fileType.textContent = file.type || 'Неизвестный тип';
         fileInfo.style.display = 'block';
         
-        // Проверяем, что файл не превышает общий лимит хранилища
-        // (эта проверка также будет на сервере)
+        // Проверяем размер файла
         if (file.size > 500 * 1024 * 1024) {
-            alert('Файл слишком большой. Максимальный размер: 500MB');
+            showNotification('Файл слишком большой. Максимальный размер: 500MB', 'error');
             e.target.value = '';
             fileInfo.style.display = 'none';
+            return;
         }
+        
+        // Проверяем, что файл не пустой
+        if (file.size === 0) {
+            showNotification('Файл пустой', 'error');
+            e.target.value = '';
+            fileInfo.style.display = 'none';
+            return;
+        }
+        
+        // Проверяем доступное место (примерная оценка)
+        const storageInfo = document.querySelector('.storage-text');
+        if (storageInfo) {
+            const usedText = storageInfo.textContent;
+            const usedMatch = usedText.match(/Использовано: ([\d.]+ [KMGT]B)/);
+            if (usedMatch) {
+                const usedSize = parseFloat(usedMatch[1]);
+                const maxSize = 500; // 500MB
+                const fileSizeMB = file.size / (1024 * 1024);
+                
+                if (usedSize + fileSizeMB > maxSize) {
+                    showNotification('Недостаточно места в хранилище', 'error');
+                    e.target.value = '';
+                    fileInfo.style.display = 'none';
+                    return;
+                }
+            }
+        }
+    } else {
+        document.getElementById('fileInfo').style.display = 'none';
     }
 });
 
@@ -292,44 +359,165 @@ function uploadFile(event) {
     const masterPassword = formData.get('master_password');
 
     if (!file || !masterPassword) {
-        alert('Выберите файл и введите мастер-пароль');
+        showNotification('Выберите файл и введите мастер-пароль', 'error');
         return;
     }
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadActions = document.getElementById('uploadActions');
+    const cancelActions = document.getElementById('cancelActions');
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Загрузка...';
+    uploadProgress.style.display = 'block';
+    uploadActions.style.display = 'none';
+    cancelActions.style.display = 'flex';
 
     const uploadData = new FormData();
     uploadData.append('file', file);
     uploadData.append('master_password', masterPassword);
 
-    fetch('/upload_file', {
-        method: 'POST',
-        body: uploadData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Файл успешно загружен!');
-            closeModal('uploadFileModal');
-            location.reload();
-        } else {
-            alert(data.error || 'Ошибка при загрузке файла');
+    currentUploadXHR = new XMLHttpRequest();
+
+    currentUploadXHR.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = percentComplete + '%';
+            progressPercent.textContent = percentComplete + '%';
+            
+            if (percentComplete < 100) {
+                progressStatus.textContent = `Загрузка: ${formatFileSize(e.loaded)} из ${formatFileSize(e.total)}`;
+            } else {
+                progressStatus.textContent = 'Обработка файла...';
+            }
         }
-    })
-    .catch(error => {
-        alert('Ошибка при загрузке файла');
     });
+
+    currentUploadXHR.addEventListener('load', function() {
+        if (currentUploadXHR.status === 200) {
+            try {
+                const data = JSON.parse(currentUploadXHR.responseText);
+                if (data.success) {
+                    progressStatus.textContent = 'Файл успешно загружен!';
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    
+                    setTimeout(() => {
+                        showNotification('Файл успешно загружен!');
+                        closeModal('uploadFileModal');
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Ошибка при загрузке файла');
+                }
+            } catch (error) {
+                progressStatus.textContent = 'Ошибка: ' + error.message;
+                setTimeout(() => {
+                    resetUploadForm();
+                    showNotification(error.message, 'error');
+                }, 2000);
+            }
+        } else {
+            try {
+                const data = JSON.parse(currentUploadXHR.responseText);
+                progressStatus.textContent = 'Ошибка: ' + (data.error || 'Ошибка соединения');
+                setTimeout(() => {
+                    resetUploadForm();
+                    showNotification(data.error || 'Ошибка соединения с сервером', 'error');
+                }, 2000);
+            } catch (error) {
+                progressStatus.textContent = 'Ошибка соединения';
+                setTimeout(() => {
+                    resetUploadForm();
+                    showNotification('Ошибка соединения с сервером', 'error');
+                }, 2000);
+            }
+        }
+    });
+
+    currentUploadXHR.addEventListener('error', function() {
+        progressStatus.textContent = 'Ошибка сети';
+        setTimeout(() => {
+            resetUploadForm();
+            showNotification('Ошибка сети при загрузке файла', 'error');
+        }, 2000);
+    });
+
+    currentUploadXHR.addEventListener('abort', function() {
+        progressStatus.textContent = 'Загрузка отменена';
+        setTimeout(() => {
+            resetUploadForm();
+        }, 1000);
+    });
+
+    currentUploadXHR.open('POST', '/upload_file');
+    currentUploadXHR.send(uploadData);
 }
 
-function showNotification(message) {
+function resetUploadForm() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadActions = document.getElementById('uploadActions');
+    const cancelActions = document.getElementById('cancelActions');
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
+
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = 'Загрузить';
+    uploadProgress.style.display = 'none';
+    uploadActions.style.display = 'flex';
+    cancelActions.style.display = 'none';
+    progressFill.style.width = '0%';
+    progressPercent.textContent = '0%';
+    progressStatus.textContent = 'Подготовка к загрузке...';
+    currentUploadXHR = null;
+}
+
+let currentUploadXHR = null;
+
+function cancelUpload() {
+    if (currentUploadXHR) {
+        currentUploadXHR.abort();
+        currentUploadXHR = null;
+    }
+    resetUploadForm();
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    
+    if (modalId === 'uploadFileModal') {
+        cancelUpload();
+        document.getElementById('uploadFileForm').reset();
+        document.getElementById('fileInfo').style.display = 'none';
+    }
+}
+
+function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = 'notification';
+    notification.className = `notification notification-${type}`;
+    
+    const icon = type === 'success' ? 'fas fa-check' : 
+                 type === 'error' ? 'fas fa-exclamation-triangle' : 
+                 type === 'warning' ? 'fas fa-exclamation-circle' : 'fas fa-info-circle';
+    
     notification.innerHTML = `
-        <i class="fas fa-check"></i>
+        <i class="${icon}"></i>
         <span>${message}</span>
     `;
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        notification.remove();
+        notification.style.transform = 'translateX(100%)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
     }, 3000);
 }
 

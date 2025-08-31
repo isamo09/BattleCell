@@ -810,6 +810,11 @@ def files():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     
+    # Проверяем, установлен ли мастер-пароль у пользователя
+    cursor.execute('SELECT master_password_hash FROM users WHERE id = ?', (current_user.id,))
+    user_result = cursor.fetchone()
+    has_master_password = bool(user_result and user_result[0])
+    
     # Проверяем структуру таблицы
     try:
         cursor.execute('SELECT id, original_filename_encrypted, file_size, created_at FROM files WHERE user_id = ?', (current_user.id,))
@@ -849,7 +854,7 @@ def files():
                 'available_formatted': format_size(max_storage - used_storage)
             }
             
-            return render_template('files.html', files=files_list, storage_info=storage_info)
+            return render_template('files.html', files=files_list, storage_info=storage_info, has_master_password=has_master_password)
         except:
             files_data = []
     
@@ -889,53 +894,80 @@ def files():
         'available_formatted': format_size(max_storage - used_storage)
     }
     
-    return render_template('files.html', files=files_list, storage_info=storage_info)
+    return render_template('files.html', files=files_list, storage_info=storage_info, has_master_password=has_master_password)
 
 @app.route('/upload_file', methods=['POST'])
 @login_required
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'Файл не выбран'}), 400
-    
-    file = request.files['file']
-    master_password = request.form.get('master_password')
-    
-    if not master_password:
-        return jsonify({'error': 'Мастер-пароль обязателен'}), 400
-    
-    if file.filename == '':
-        return jsonify({'error': 'Файл не выбран'}), 400
-    
-    # Проверяем мастер-пароль и получаем пользовательский ключ
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT master_password_hash, user_key FROM users WHERE id = ?', (current_user.id,))
-    result = cursor.fetchone()
-    conn.close()
-    
-    if not result:
-        return jsonify({'error': 'Пользователь не найден'}), 400
-    
-    if not check_password_hash(result[0], master_password):
-        return jsonify({'error': 'Неверный мастер-пароль'}), 400
-    
-    encrypted_user_key = result[1]
-    
-    if not encrypted_user_key:
-        return jsonify({'error': 'Пользовательский ключ не найден'}), 400
-    
-    # Дешифруем пользовательский ключ мастер-паролем
     try:
-        user_key = decrypt_user_key(encrypted_user_key, master_password)
-        if not user_key:
-            return jsonify({'error': 'Ошибка дешифровки пользовательского ключа'}), 400
-    except:
-        return jsonify({'error': 'Ошибка дешифровки пользовательского ключа'}), 400
-    
-    if file:
-        original_filename = file.filename
-        secure_filename_for_storage = secure_filename(file.filename)
-        file_data = file.read()
+        # Проверяем, установлен ли мастер-пароль у пользователя
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT master_password_hash FROM users WHERE id = ?', (current_user.id,))
+        user_result = cursor.fetchone()
+        conn.close()
+        
+        if not user_result or not user_result[0]:
+            return jsonify({'error': 'Мастер-пароль не установлен. Установите мастер-пароль в настройках аккаунта.'}), 400
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'Файл не выбран'}), 400
+        
+        file = request.files['file']
+        master_password = request.form.get('master_password')
+        
+        if not master_password:
+            return jsonify({'error': 'Мастер-пароль обязателен'}), 400
+        
+        if file.filename == '':
+            return jsonify({'error': 'Файл не выбран'}), 400
+        
+        # Проверяем размер файла
+        file.seek(0, 2)  # Перемещаемся в конец файла
+        file_size = file.tell()
+        file.seek(0)  # Возвращаемся в начало
+        
+        if file_size == 0:
+            return jsonify({'error': 'Файл пустой'}), 400
+        
+        if file_size > 500 * 1024 * 1024:  # 500MB
+            return jsonify({'error': f'Файл слишком большой. Размер: {format_size(file_size)}, максимальный размер: 500MB'}), 400
+        
+        # Получаем пользовательский ключ и проверяем его дешифровку
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT user_key FROM users WHERE id = ?', (current_user.id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return jsonify({'error': 'Пользователь не найден'}), 400
+        
+        encrypted_user_key = result[0]
+        
+        if not encrypted_user_key:
+            return jsonify({'error': 'Пользовательский ключ не найден'}), 400
+        
+        # Сначала пытаемся дешифровать пользовательский ключ мастер-паролем
+        try:
+            user_key = decrypt_user_key(encrypted_user_key, master_password)
+            if not user_key:
+                return jsonify({'error': 'Неверный мастер-пароль'}), 400
+        except Exception as e:
+            return jsonify({'error': 'Неверный мастер-пароль'}), 400
+        
+        # Теперь проверяем хеш мастер-пароля для дополнительной безопасности
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT master_password_hash FROM users WHERE id = ?', (current_user.id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return jsonify({'error': 'Пользователь не найден'}), 400
+        
+        if not check_password_hash(result[0], master_password):
+            return jsonify({'error': 'Неверный мастер-пароль'}), 400
         
         # Проверяем общий размер всех файлов пользователя
         conn = sqlite3.connect('database.db')
@@ -944,11 +976,27 @@ def upload_file():
         current_storage = cursor.fetchone()[0]
         conn.close()
         
-        total_storage_after_upload = current_storage + len(file_data)
+        total_storage_after_upload = current_storage + file_size
         max_storage = 500 * 1024 * 1024  # 500MB в байтах
         
         if total_storage_after_upload > max_storage:
-            return jsonify({'error': f'Недостаточно места. Доступно: {format_size(max_storage - current_storage)}, требуется: {format_size(len(file_data))}'}), 400
+            return jsonify({'error': f'Недостаточно места. Доступно: {format_size(max_storage - current_storage)}, требуется: {format_size(file_size)}'}), 400
+        
+        # Читаем файл по частям для экономии памяти
+        chunk_size = 1024 * 1024  # 1MB чанки
+        file_data = b''
+        
+        while True:
+            chunk = file.read(chunk_size)
+            if not chunk:
+                break
+            file_data += chunk
+        
+        if not file_data:
+            return jsonify({'error': 'Файл пустой'}), 400
+        
+        original_filename = file.filename
+        secure_filename_for_storage = secure_filename(file.filename)
         
         # Шифруем файл и имена файлов ключом шифрования пользователя
         try:
@@ -956,31 +1004,81 @@ def upload_file():
             encrypted_filename = encrypt_data(secure_filename_for_storage, current_user.id)
             encrypted_original_filename = encrypt_data(original_filename, current_user.id)
         except ValueError as e:
-            return jsonify({'error': str(e)}), 400
+            return jsonify({'error': f'Ошибка шифрования: {str(e)}'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Ошибка обработки файла: {str(e)}'}), 400
         
+        # Сохраняем файл в базу данных
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO files (user_id, filename_encrypted, original_filename_encrypted, file_size, encrypted_data) VALUES (?, ?, ?, ?, ?)',
-                      (current_user.id, encrypted_filename, encrypted_original_filename, len(file_data), encrypted_data))
-        conn.commit()
-        conn.close()
+        try:
+            cursor.execute('INSERT INTO files (user_id, filename_encrypted, original_filename_encrypted, file_size, encrypted_data) VALUES (?, ?, ?, ?, ?)',
+                          (current_user.id, encrypted_filename, encrypted_original_filename, len(file_data), encrypted_data))
+            conn.commit()
+        except sqlite3.IntegrityError as e:
+            conn.rollback()
+            conn.close()
+            return jsonify({'error': 'Файл с таким именем уже существует'}), 400
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            return jsonify({'error': f'Ошибка сохранения файла в базу данных: {str(e)}'}), 400
+        finally:
+            conn.close()
         
-        return jsonify({'success': True, 'message': 'Файл загружен'})
-    
-    return jsonify({'error': 'Ошибка обработки файла'}), 400
+        return jsonify({'success': True, 'message': 'Файл успешно загружен'})
+        
+    except Exception as e:
+        return jsonify({'error': f'Неожиданная ошибка: {str(e)}'}), 500
 
 @app.route('/download_file/<int:file_id>', methods=['POST'])
 @login_required
 def download_file(file_id):
+    # Проверяем, установлен ли мастер-пароль у пользователя
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT master_password_hash FROM users WHERE id = ?', (current_user.id,))
+    user_result = cursor.fetchone()
+    conn.close()
+    
+    if not user_result or not user_result[0]:
+        return jsonify({'error': 'Мастер-пароль не установлен. Установите мастер-пароль в настройках аккаунта.'}), 400
+    
     master_password = request.form.get('master_password')
     
     if not master_password:
         return jsonify({'error': 'Мастер-пароль обязателен'}), 400
     
-    # Проверяем мастер-пароль и получаем пользовательский ключ
+    # Получаем пользовательский ключ и проверяем его дешифровку
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT master_password_hash, user_key FROM users WHERE id = ?', (current_user.id,))
+    cursor.execute('SELECT user_key FROM users WHERE id = ?', (current_user.id,))
+    user_result = cursor.fetchone()
+    
+    if not user_result:
+        conn.close()
+        return jsonify({'error': 'Пользователь не найден'}), 400
+    
+    encrypted_user_key = user_result[0]
+    
+    if not encrypted_user_key:
+        conn.close()
+        return jsonify({'error': 'Пользовательский ключ не найден'}), 400
+    
+    # Сначала пытаемся дешифровать пользовательский ключ мастер-паролем
+    try:
+        user_key = decrypt_user_key(encrypted_user_key, master_password)
+        if not user_key:
+            conn.close()
+            return jsonify({'error': 'Неверный мастер-пароль'}), 400
+    except:
+        conn.close()
+        return jsonify({'error': 'Неверный мастер-пароль'}), 400
+    
+    # Теперь проверяем хеш мастер-пароля для дополнительной безопасности
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT master_password_hash FROM users WHERE id = ?', (current_user.id,))
     user_result = cursor.fetchone()
     
     if not user_result:
@@ -990,22 +1088,6 @@ def download_file(file_id):
     if not check_password_hash(user_result[0], master_password):
         conn.close()
         return jsonify({'error': 'Неверный мастер-пароль'}), 400
-    
-    encrypted_user_key = user_result[1]
-    
-    if not encrypted_user_key:
-        conn.close()
-        return jsonify({'error': 'Пользовательский ключ не найден'}), 400
-    
-    # Дешифруем пользовательский ключ мастер-паролем
-    try:
-        user_key = decrypt_user_key(encrypted_user_key, master_password)
-        if not user_key:
-            conn.close()
-            return jsonify({'error': 'Ошибка дешифровки пользовательского ключа'}), 400
-    except:
-        conn.close()
-        return jsonify({'error': 'Ошибка дешифровки пользовательского ключа'}), 400
     
     # Получаем зашифрованный файл
     try:
