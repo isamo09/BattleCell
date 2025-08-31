@@ -95,13 +95,20 @@
     <div class="quick-actions">
         <h2>Быстрые действия</h2>
         <div class="actions-grid">
-            <button class="action-btn" onclick="showAddPasswordModal()">
+            <button class="action-btn" onclick="showAddPasswordModal()" title="Добавить пароль (Ctrl+K)">
                 <i class="fas fa-plus"></i>
                 <span>Добавить пароль</span>
+                <small class="hotkey">Ctrl+K</small>
             </button>
-            <button class="action-btn" onclick="showUploadFileModal()">
+            <button class="action-btn" onclick="showUploadFileModal()" title="Загрузить файл (Ctrl+U)">
                 <i class="fas fa-upload"></i>
                 <span>Загрузить файл</span>
+                <small class="hotkey">Ctrl+U</small>
+            </button>
+            <button class="action-btn" onclick="showQuickUrlModal()" title="Быстрый переход (Ctrl+L или Ctrl+T)">
+                <i class="fas fa-external-link-alt"></i>
+                <span>Быстрый переход</span>
+                <small class="hotkey">Ctrl+L</small>
             </button>
             <a href="{{ url_for('generator') }}" class="action-btn">
                 <i class="fas fa-random"></i>
@@ -460,6 +467,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Горячие клавиши
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+K - Быстрое добавление пароля
+        if (e.ctrlKey && e.key === 'k') {
+            e.preventDefault();
+            showAddPasswordModal();
+        }
+        // Ctrl+U - Быстрая загрузка файла
+        if (e.ctrlKey && e.key === 'u') {
+            e.preventDefault();
+            showUploadFileModal();
+        }
+        // Ctrl+L - Быстрый переход
+        if (e.ctrlKey && e.key === 'l') {
+            e.preventDefault();
+            showQuickUrlModal();
+        }
+        // Ctrl+T - Быстрый переход (альтернативная клавиша)
+        if (e.ctrlKey && e.key === 't') {
+            e.preventDefault();
+            showQuickUrlModal();
+        }
+        // Escape - Закрытие модальных окон
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    });
+    
     window.onclick = function(event) {
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
@@ -505,5 +545,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Модальное окно для быстрого перехода
+function showQuickUrlModal() {
+    document.getElementById('quickUrlModal').style.display = 'flex';
+}
+
+function navigateToUrl() {
+    const url = document.getElementById('quickUrl').value.trim();
+    if (url) {
+        // Проверяем, является ли URL относительным путем
+        if (url.startsWith('/')) {
+            window.location.href = url;
+        } else if (url.startsWith('http://') || url.startsWith('https://')) {
+            window.open(url, '_blank');
+        } else {
+            // Если это не URL, добавляем протокол
+            window.open('https://' + url, '_blank');
+        }
+        closeModal('quickUrlModal');
+    }
+}
+
+// Фокус на поле ввода при открытии модального окна
+function showQuickUrlModal() {
+    document.getElementById('quickUrlModal').style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('quickUrl').focus();
+    }, 100);
+}
 </script>
+
+<!-- Модальное окно для быстрого перехода -->
+<div id="quickUrlModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Быстрый переход</h3>
+            <button class="modal-close" onclick="closeModal('quickUrlModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="quickUrl">Введите URL или путь</label>
+                <input type="text" id="quickUrl" name="quickUrl" placeholder="Например: /passwords, /dashboard, google.com" required onkeypress="if(event.key==='Enter') navigateToUrl()" tabindex="1">
+                <small class="form-help">Можно ввести относительный путь (например, /passwords) или полный URL</small>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('quickUrlModal')" tabindex="3">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="navigateToUrl()" tabindex="2">
+                    <i class="fas fa-external-link-alt"></i>
+                    Перейти
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -23,6 +23,10 @@
                 <i class="fas fa-upload"></i>
                 Загрузить файл
             </button>
+            <div class="search-container">
+                <input type="text" id="fileSearch" placeholder="Поиск по названию файла... (Ctrl+F)" class="search-input" onkeypress="if(event.key==='Enter') event.preventDefault()">
+                <i class="fas fa-search search-icon"></i>
+            </div>
         </div>
     </div>
     
@@ -337,5 +341,44 @@ window.onclick = function(event) {
         }
     });
 }
+
+// Поиск по файлам
+document.getElementById('fileSearch').addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase();
+    const fileCards = document.querySelectorAll('.file-card');
+    
+    fileCards.forEach(card => {
+        const filename = card.querySelector('h3').textContent.toLowerCase();
+        
+        if (filename.includes(query)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// Горячие клавиши для страницы файлов
+document.addEventListener('keydown', function(e) {
+    // Ctrl+F - Фокус на поиск
+    if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        document.getElementById('fileSearch').focus();
+    }
+    // Ctrl+L или Ctrl+T - Быстрый переход на dashboard
+    if (e.ctrlKey && (e.key === 'l' || e.key === 't')) {
+        e.preventDefault();
+        window.location.href = '/dashboard';
+    }
+    // Escape - Закрытие модальных окон
+    if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+    }
+});
 </script>
 {% endblock %}
